@@ -1,0 +1,21 @@
+{
+    "users":[{
+        "id":0,
+        "account":"winnawa",
+        "password":"asd123",
+        "IP":"",
+        "port":""
+    },{
+        "id":1,
+        "account":"leekSolo",
+        "password":"proLap",
+        "IP":"",
+        "port":""
+    },{
+        "id":2,
+        "account":"nhanNguyen",
+        "password":"meomeo",
+        "IP":"",
+        "port":""
+    }]
+}
