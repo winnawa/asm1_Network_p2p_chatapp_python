@@ -5,8 +5,8 @@ import threading
 import pickle
 from tkinter import *
 import random
-
-
+import os
+import tqdm
 
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -53,6 +53,42 @@ message_receiving_label_list = []
 ########################################################################
 ########################################################################
 # PEER FUNCTION##############################################################################
+def recv_to_newline(s):
+    buf = []
+    while True:
+        c = s.recv(1)
+        if not len(c):
+            # socket closed
+            return None
+        if c == b"\n":
+            return b"".join(buf)
+        buf.append(c)
+def receiveFile(asocket):
+    file_name = recv_to_newline(asocket).decode("utf-8")
+    print(file_name)
+    file_size = int(asocket.recv(1024).decode())
+    print(file_size)
+
+    error = False
+    with open(file_name, "wb") as file:
+        progress = tqdm.tqdm(unit="B", unit_scale=True, unit_divisor=1000, total=int(file_size))
+        while file_size:
+            data = asocket.recv(min(1024, file_size))
+            if not data:
+                print("Error: Truncated recieve")
+                error = True
+                break
+            file.write(data)    
+            progress.update(len(data))
+            file_size -= len(data)
+        return file_name
+    if error:
+        os.remove(file_name)
+
+    
+
+
+
 def responseToChosenPeer(oneSocket,messageToGetName):
     global connectionCreatingSocket 
     name = ''
@@ -123,24 +159,38 @@ def receiveAllMessage(client,address):
                 initYforAllPeer += 50
                 
             else:
-                # render on chatbox
                 global initYforAnotherPeer
-                messageToTake = ''
-                canTake = False
-                for i in message:
-                    if canTake:
-                        messageToTake +=i
-                    if i == ":":
-                        canTake = True
-                    
-                print(messageToTake)
-
                 global message_receiving_label_list
+                if message == "SENDFILE":
+                    file_name = receiveFile(client)
 
-                page2_messageFromAllPeer_label = Label(page_2,text=messageToTake,bg='white' ,wraplength=100,font=(10))
-                page2_messageFromAllPeer_label.place(x=200,y=initYforAnotherPeer)
-                initYforAnotherPeer += 60
-                message_receiving_label_list.append(page2_messageFromAllPeer_label)
+                    
+                    
+
+                    page2_fileReceiving_label = Label(page_2,text=file_name,bg='white' ,wraplength=100,font=(10))
+                    page2_fileReceiving_label.place(x=200,y=initYforAnotherPeer)
+                    initYforAnotherPeer += 60
+                    message_receiving_label_list.append(page2_fileReceiving_label)
+
+                else:
+                # render on chatbox
+                    
+                    messageToTake = ''
+                    canTake = False
+                    for i in message:
+                        if canTake:
+                            messageToTake +=i
+                        if i == ":":
+                            canTake = True
+                    
+                    print(messageToTake)
+
+                    
+
+                    page2_messageFromAllPeer_label = Label(page_2,text=messageToTake,bg='white' ,wraplength=100,font=(10))
+                    page2_messageFromAllPeer_label.place(x=200,y=initYforAnotherPeer)
+                    initYforAnotherPeer += 60
+                    message_receiving_label_list.append(page2_messageFromAllPeer_label)
 
 
 
@@ -405,10 +455,32 @@ def getOnlineFriendlist():
             initY += 70
 
 
-def upload_file():
-    file = filedialog.askopenfilename()
-    fob = open(file,'r')
-    print(fob.read())
+def send_file():
+
+    global connectionCreatingSocket
+
+    if connectionCreatingSocket != {}:
+        filename = filedialog.askopenfilename()
+        print(filename)
+
+        connectionCreatingSocket.send("SENDFILE".encode('ascii'))
+
+        with open(filename, "rb") as file:
+            file_size = os.path.getsize(filename)
+        # protocol <filename>\n<size>\n<data>
+            connectionCreatingSocket.sendall(filename.encode("utf-8"))
+            connectionCreatingSocket.sendall(b"\n")
+            connectionCreatingSocket.sendall(str(file_size).encode("utf-8"))
+            connectionCreatingSocket.sendall(b"\n")
+            data = file.read()
+            connectionCreatingSocket.sendall(data)
+
+        global initYforAnotherPeer
+        global message_sending_label_list
+        my_sending_file_label = Label(page_2, text= filename, wraplength=100,font=(10), bg="blue")
+        my_sending_file_label.place(x=300,y=initYforAnotherPeer,height=50, width=100)
+        message_sending_label_list.append(my_sending_file_label)
+        initYforAnotherPeer += 50
 
 ########################################################################
 ########################################################################
@@ -495,10 +567,15 @@ chatBox = Entry(page_2, width=50)
 chatBox.place(x=150,y=300,height=50)
 
 sendMessageButton = Button(page_2, text='SEND', font=('Bold',15) , command=lambda: sendMessageToCurrentPeer(chatBox.get()))
-sendMessageButton.place(x = 200, y= 350,height=50)
+sendMessageButton.place(x = 180, y= 350,height=50)
 
 stopTalkingButton = Button(page_2, text='STOP', font=('Bold',15) , command=lambda: stopTalkingWithCurrentPeer())
-stopTalkingButton.place(x = 280, y= 350,height=50)
+stopTalkingButton.place(x = 260, y= 350,height=50)
+
+upFileButton = Button(page_2, text='UPFILE', font=('Bold',15) , command=lambda: send_file())
+upFileButton.place(x = 330, y= 350,height=50)
+
+
 
 my_row,my_col=0,0
 # print("friendlist of user",friendlistOfUser)
