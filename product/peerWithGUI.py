@@ -1,6 +1,5 @@
 
-from cProfile import label
-from tkinter import messagebox
+from tkinter import filedialog, messagebox
 import socket
 import threading
 import pickle
@@ -68,6 +67,8 @@ def responseToChosenPeer(oneSocket,messageToGetName):
     reRenderPersonNameTag(name)
     reRenderMyMessageLabel()
     reRenderAnotherPeerMessageLabel()
+    global initYforAnotherPeer
+    initYforAnotherPeer = 40
 
 def receiveFromCurrentPeer(aSocket):
     if (aSocket):
@@ -89,7 +90,7 @@ def receiveFromCurrentPeer(aSocket):
                 
                 global initYforAnotherPeer
                 global message_receiving_label_list
-                page2_messageFromAnotherPeer = Label(page_2,text=messageToTake, font=(10))
+                page2_messageFromAnotherPeer = Label(page_2,text=messageToTake, bg='white',font=(10))
                 page2_messageFromAnotherPeer.place(x=120,y=initYforAnotherPeer)
                 initYforAnotherPeer += 30
                 message_receiving_label_list.append(page2_messageFromAnotherPeer)
@@ -114,7 +115,7 @@ def receiveAllMessage(client,address):
             # global currentPersonName
             if (currentPersonInTalk != client):
                 # currentPersonName
-                page2_messageFromAllPeer_button = Button(page_2,text=f'{message}', wraplength=100,font=(10), command=lambda: responseToChosenPeer(client,message))
+                page2_messageFromAllPeer_button = Button(page_2,text=f'{message}', wraplength=200,font=(10), command=lambda: responseToChosenPeer(client,message))
                 print("before")
                 global initYforAllPeer
                 page2_messageFromAllPeer_button.place(x=420,y=initYforAllPeer)
@@ -134,11 +135,12 @@ def receiveAllMessage(client,address):
                     
                 print(messageToTake)
 
+                global message_receiving_label_list
 
-                page2_messageFromAllPeer_label = Label(page_2,text=messageToTake, wraplength=100,font=(10))
+                page2_messageFromAllPeer_label = Label(page_2,text=messageToTake,bg='white' ,wraplength=100,font=(10))
                 page2_messageFromAllPeer_label.place(x=200,y=initYforAnotherPeer)
-                initYforAnotherPeer += 50
-                print("")
+                initYforAnotherPeer += 60
+                message_receiving_label_list.append(page2_messageFromAllPeer_label)
 
 
 
@@ -295,6 +297,11 @@ def stopTalkingWithCurrentPeer():
     connectionCreatingSocket.close()
     connectionCreatingSocket = {}
     reRenderPersonNameTag('')
+    reRenderMyMessageLabel()
+    reRenderAnotherPeerMessageLabel()
+    global initYforAnotherPeer
+    initYforAnotherPeer = 40
+
 
 def talkToPeer(ip,port,name): 
     # print("is talking to",name)
@@ -392,12 +399,16 @@ def getOnlineFriendlist():
         initY=10
         for data in friendlistOfUser:
             print(data)
-            name_button = Button(page_2, text=f'{data["account"]}', command=lambda: talkToPeer(data["IP"],data["port"],data["account"]))
+            name_button = Button(page_2, text=f'{data["account"]}', command=lambda   ip=data["IP"],port=data["port"],name=data["account"]  : talkToPeer(ip,port,name))
             name_button.place(x=10,y=initY,width=100,height=50)
             button_list.append(name_button)
             initY += 70
 
 
+def upload_file():
+    file = filedialog.askopenfilename()
+    fob = open(file,'r')
+    print(fob.read())
 
 ########################################################################
 ########################################################################

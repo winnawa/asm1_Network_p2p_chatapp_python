@@ -230,6 +230,8 @@ def recieveMessage(client,address):
 
             else:
                 print(f'client said: {message}')
+                print('message not recognized')
+                client.close()
 
         except:
             print("hic")

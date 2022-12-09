@@ -28,7 +28,8 @@ while True:
             print("full message received")
 
             d = pickle.loads(full_msg[HEADERSIZE:])
-            print(d)
+                    
+            # print(d)
             new_msg = True
             full_msg = b''
-    print(full_msg)
+    

@@ -34,5 +34,7 @@ def receiveConnection():
         msg = bytes(f'{len(msg):<{20}}', "utf-8") + msg
         client.send(msg)
 
+      
+
 
 receiveConnection()
