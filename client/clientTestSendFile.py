@@ -35,9 +35,10 @@ client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(("localhost", 9999))
 
 filename = "image.png"
-
+# filename = "/home/win/Desktop/ASM1_Computer_Network_Python/product/file.txt"
 with open(filename, "rb") as file:
     file_size = os.path.getsize(filename)
+    print(file_size)
     # protocol <filename>\n<size>\n<data>
     client.sendall(filename.encode("utf-8"))
     client.sendall(b"\n")

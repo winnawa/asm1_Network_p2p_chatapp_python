@@ -63,7 +63,8 @@ client, addr = server.accept()
 
 file_name = recv_to_newline(client).decode("utf-8")
 print(file_name)
-file_size = int(client.recv(1024).decode())
+# file_size = int(client.recv(1024).decode("utf-8"))
+file_size = int(recv_to_newline(client).decode("utf-8"))
 print(file_size)
 
 error = False

@@ -155,7 +155,7 @@ def sendOnlineFriendlist(client,id):
 
 
 
-def recieveMessage(client,address):
+def receiveMessage(client,address):
     while True:
         try:
             message = client.recv(1024).decode('ascii')
@@ -257,19 +257,15 @@ def receiveConnection():
 
 
         
-
-        currentClient = client
-        #print(currentClient)
-
-        rec_message_thread = threading.Thread(target=recieveMessage, args=(client,address) )
+        rec_message_thread = threading.Thread(target=receiveMessage, args=(client,address) )
         rec_message_thread.start()
-        # send_message_thread = threading.Thread(target=sendMessage, args= (currentClient,))
-        # send_message_thread.start()
+        
+
+        # login(client)
+        
 
 
-        login(client)
-        # sendFriendList(client)
-        client.send(str(address[1]).encode('ascii'))
+        # client.send(str(address[1]).encode('ascii'))
 
 
 

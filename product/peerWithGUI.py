@@ -13,7 +13,8 @@ client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 userId = "-1"
 HEADERSIZE = 20
 
-
+server_hostname=socket.gethostname()
+server_IPAddr=socket.gethostbyname(server_hostname)
 
 initYforAnotherPeer = 40
 initYforAllPeer=10
@@ -65,12 +66,21 @@ def recv_to_newline(s):
         buf.append(c)
 def receiveFile(asocket):
     file_name = recv_to_newline(asocket).decode("utf-8")
-    print(file_name)
-    file_size = int(asocket.recv(1024).decode())
-    print(file_size)
+    print('at the receive file side: ',file_name)
+    file_size = int(recv_to_newline(asocket).decode("utf-8"))
+    print('at the receive file side: ',file_size)
 
     error = False
-    with open(file_name, "wb") as file:
+
+    file_name_without_path =''
+    for i in file_name:
+        if i == "/":
+            file_name_without_path=''
+        else:
+            file_name_without_path +=i
+    print("file name without path",file_name_without_path)
+
+    with open(file_name_without_path, "wb") as file:
         progress = tqdm.tqdm(unit="B", unit_scale=True, unit_divisor=1000, total=int(file_size))
         while file_size:
             data = asocket.recv(min(1024, file_size))
@@ -81,10 +91,12 @@ def receiveFile(asocket):
             file.write(data)    
             progress.update(len(data))
             file_size -= len(data)
-        return file_name
     if error:
-        os.remove(file_name)
+        print('error happend in receiving ')
+        os.remove(file_name_without_path)
 
+    # print("end of writing  file")
+    return file_name_without_path
     
 
 
@@ -113,25 +125,39 @@ def receiveFromCurrentPeer(aSocket):
             try:
                 message = aSocket.recv(1024).decode('ascii')
                 
-                
-                messageToTake = ''
-                canTake = False
-                for i in message:
-                    if canTake:
-                        messageToTake +=i
-                    if i == ":":
-                        canTake = True
-                print(messageToTake)
-                
-                
                 global initYforAnotherPeer
                 global message_receiving_label_list
-                page2_messageFromAnotherPeer = Label(page_2,text=messageToTake, bg='white',font=(10))
-                page2_messageFromAnotherPeer.place(x=120,y=initYforAnotherPeer)
-                initYforAnotherPeer += 30
-                message_receiving_label_list.append(page2_messageFromAnotherPeer)
 
-                print("Your friend said: ",message)
+                if message == 'SENDFILE':
+                    print("in message == SENDFILE of current peer message")
+                    file_name = receiveFile(aSocket)
+
+                    if file_name != "":
+                        page2_fileReceiving_label = Label(page_2,text=file_name,bg='white' ,wraplength=100,font=(10))
+                        page2_fileReceiving_label.place(x=120,y=initYforAnotherPeer)
+                        initYforAnotherPeer += 60
+                        message_receiving_label_list.append(page2_fileReceiving_label)
+
+                else:
+                    messageToTake = ''
+                    canTake = False
+                    for i in message:
+                        if canTake:
+                            messageToTake +=i
+                        if i == ":":
+                            canTake = True
+                    print(messageToTake)
+                
+                    if messageToTake == '':
+                        messageToTake = message
+                
+                   
+                    page2_messageFromAnotherPeer = Label(page_2,text=messageToTake, bg='white',font=(10))
+                    page2_messageFromAnotherPeer.place(x=120,y=initYforAnotherPeer)
+                    initYforAnotherPeer += 30
+                    message_receiving_label_list.append(page2_messageFromAnotherPeer)
+
+                    print("Your friend said: ",message)
             except:
                 print("error")
                 aSocket.close()
@@ -162,13 +188,14 @@ def receiveAllMessage(client,address):
                 global initYforAnotherPeer
                 global message_receiving_label_list
                 if message == "SENDFILE":
+                    print("in message == SENDFILE of all message")
                     file_name = receiveFile(client)
-
+                    # receiveFile(client)
                     
                     
 
                     page2_fileReceiving_label = Label(page_2,text=file_name,bg='white' ,wraplength=100,font=(10))
-                    page2_fileReceiving_label.place(x=200,y=initYforAnotherPeer)
+                    page2_fileReceiving_label.place(x=120,y=initYforAnotherPeer)
                     initYforAnotherPeer += 60
                     message_receiving_label_list.append(page2_fileReceiving_label)
 
@@ -188,7 +215,7 @@ def receiveAllMessage(client,address):
                     
 
                     page2_messageFromAllPeer_label = Label(page_2,text=messageToTake,bg='white' ,wraplength=100,font=(10))
-                    page2_messageFromAllPeer_label.place(x=200,y=initYforAnotherPeer)
+                    page2_messageFromAllPeer_label.place(x=120,y=initYforAnotherPeer)
                     initYforAnotherPeer += 60
                     message_receiving_label_list.append(page2_messageFromAllPeer_label)
 
@@ -201,55 +228,55 @@ def receiveAllMessage(client,address):
 
 
 
-def userAction():
-    while True:
-        message = input("What you want to do: ")
-        if message == "CONNECT TO ANOTHER PEER":
-            IP = input("input IP address: ")
-            port = int(input("input port address: "))
-            connectionCreatingSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            connectionCreatingSocket.connect((IP,port))
-            stopTalking = False
+# def userAction():
+#     while True:
+#         message = input("What you want to do: ")
+#         if message == "CONNECT TO ANOTHER PEER":
+#             IP = input("input IP address: ")
+#             port = int(input("input port address: "))
+#             connectionCreatingSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#             connectionCreatingSocket.connect((IP,port))
+#             stopTalking = False
             
 
-            receive_thread = threading.Thread(target= receiveFromCurrentPeer, args=(connectionCreatingSocket,))
-            receive_thread.start()
+#             receive_thread = threading.Thread(target= receiveFromCurrentPeer, args=(connectionCreatingSocket,))
+#             receive_thread.start()
 
-            while True:
-                message = input("Okat so now we connect, what you want to send to other peer: ")
-                if  message == "QUIT":
-                    stopTalking = True
-                    break
-                else:
-                    connectionCreatingSocket.send(message.encode('ascii'))
-                    print("You said: ",message)
-            connectionCreatingSocket.close()
-
-
+#             while True:
+#                 message = input("Okat so now we connect, what you want to send to other peer: ")
+#                 if  message == "QUIT":
+#                     stopTalking = True
+#                     break
+#                 else:
+#                     connectionCreatingSocket.send(message.encode('ascii'))
+#                     print("You said: ",message)
+#             connectionCreatingSocket.close()
 
 
-        elif message == "ANSWER MESSAGE FROM PEER":
-            IP = input("input IP address: ")
-            port = int(input("input port address: "))
-            socketConnection={}
-            found = False
-            for element in inComingPeer:
-                print("this is in inComingPeer list",element)
-                if element["IP"] == IP and element["port"]==port :
-                    socketConnection = element["socket"]
-                    found = True
-                    break
-            if found:
-                print(socketConnection)
-                while True:
-                    message = input("what do you want to say: ")
-                    socketConnection.send(message.encode('ascii'))
 
 
-            else:
-                print("address not found")
-        else:
-            print("Sorry we dont understand this command")    
+#         elif message == "ANSWER MESSAGE FROM PEER":
+#             IP = input("input IP address: ")
+#             port = int(input("input port address: "))
+#             socketConnection={}
+#             found = False
+#             for element in inComingPeer:
+#                 print("this is in inComingPeer list",element)
+#                 if element["IP"] == IP and element["port"]==port :
+#                     socketConnection = element["socket"]
+#                     found = True
+#                     break
+#             if found:
+#                 print(socketConnection)
+#                 while True:
+#                     message = input("what do you want to say: ")
+#                     socketConnection.send(message.encode('ascii'))
+
+
+#             else:
+#                 print("address not found")
+#         else:
+#             print("Sorry we dont understand this command")    
 
 
 
@@ -316,8 +343,6 @@ def connectToAnotherPeer(ip,port):
     connectionCreatingSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     connectionCreatingSocket.connect((ip,port))
 
-   
-
     receive_thread = threading.Thread(target= receiveFromCurrentPeer, args=(connectionCreatingSocket,))
     receive_thread.start()
 
@@ -372,8 +397,8 @@ def talkToPeer(ip,port,name):
 def sendLoginInfoToServer(account,password):
     global userAccount
     userAccount = account
-    message = client.recv(1024).decode('ascii')
-    print(message)
+    # message = client.recv(1024).decode('ascii')
+    # print(message)
     client.send("LOG".encode('ascii'))
     message = client.recv(1024).decode('ascii')
     print(message)
@@ -458,29 +483,40 @@ def getOnlineFriendlist():
 def send_file():
 
     global connectionCreatingSocket
-
+  
     if connectionCreatingSocket != {}:
         filename = filedialog.askopenfilename()
-        print(filename)
+        # print('this is file name in send_file',filename)
 
-        connectionCreatingSocket.send("SENDFILE".encode('ascii'))
+        # connectionCreatingSocket.send("SENDFILE".encode('ascii'))
+        if filename != "":
 
-        with open(filename, "rb") as file:
-            file_size = os.path.getsize(filename)
-        # protocol <filename>\n<size>\n<data>
-            connectionCreatingSocket.sendall(filename.encode("utf-8"))
-            connectionCreatingSocket.sendall(b"\n")
-            connectionCreatingSocket.sendall(str(file_size).encode("utf-8"))
-            connectionCreatingSocket.sendall(b"\n")
-            data = file.read()
-            connectionCreatingSocket.sendall(data)
+            with open(filename, "rb") as file:
+                connectionCreatingSocket.send("SENDFILE".encode('ascii'))
 
-        global initYforAnotherPeer
-        global message_sending_label_list
-        my_sending_file_label = Label(page_2, text= filename, wraplength=100,font=(10), bg="blue")
-        my_sending_file_label.place(x=300,y=initYforAnotherPeer,height=50, width=100)
-        message_sending_label_list.append(my_sending_file_label)
-        initYforAnotherPeer += 50
+                file_size = os.path.getsize(filename)
+                # protocol <filename>\n<size>\n<data>
+                connectionCreatingSocket.sendall(filename.encode("utf-8"))
+                connectionCreatingSocket.sendall(b"\n")
+                connectionCreatingSocket.sendall(str(file_size).encode("utf-8"))
+                connectionCreatingSocket.sendall(b"\n")
+                data = file.read()
+                connectionCreatingSocket.sendall(data)
+        
+
+            file_name_without_path =''
+            for i in filename:
+                if i == "/":
+                    file_name_without_path=''
+                else:
+                    file_name_without_path +=i
+            print("file name without path in sending",file_name_without_path)
+            global initYforAnotherPeer
+            global message_sending_label_list
+            my_sending_file_label = Label(page_2, text= file_name_without_path, wraplength=100,font=(10), bg="blue")
+            my_sending_file_label.place(x=300,y=initYforAnotherPeer,height=50, width=100)
+            message_sending_label_list.append(my_sending_file_label)
+            initYforAnotherPeer += 50
 
 ########################################################################
 ########################################################################
@@ -683,7 +719,8 @@ window.protocol("WM_DELETE_WINDOW", on_closing)
 # CLIENT FUNCTION#################################################################################
 
 def connectToServer():
-    client.connect(('127.0.1.1',55555))
+    global server_IPAddr
+    client.connect((server_IPAddr,55555))
 
 def sendLoginInfo(client):
     account = input("please input account") 
